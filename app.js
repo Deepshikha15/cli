@@ -3,8 +3,8 @@ const fs= require("fs")
 
 const command = process.argv[2]; 
 
-if(command !="add" && command !== "delete" && command !="update"){
-    console.log('Please use "add" to add a task, "delete" to delete a task, or "update" to update a task');
+if(command !="add" && command !== "delete" && command !="update" && command !== "mark-in-progress" && command !== "mark-done"){
+    console.log('Please use "add" to add a task, "delete" to delete a task, "update" to update a task, "mark-in-progress" to mark a task as in-progress, or "mark-done" to mark a task as done');
     process.exit(1)
 }
 
@@ -40,7 +40,8 @@ if (command === "add") {
 
             const task_name = {
                 id: nextId,
-                task: task
+                task: task,
+                status: "pending"
             };
 
             tasks.push(task_name);
@@ -113,6 +114,67 @@ if (command === "update") {
                     });
                 }
             });
+        });
+    });
+}
+
+
+if (command === "mark-in-progress") {
+    rl.question("Enter the ID of the task to mark as in-progress: ", (taskId) => {
+        const id = parseInt(taskId);
+        if (isNaN(id)) {
+            console.log("Invalid ID, please enter a number.");
+            rl.close();
+            return;
+        }
+
+        loadTasks((tasks) => {
+            const taskIndex = tasks.findIndex(task => task.id === id);
+
+            if (taskIndex === -1) {
+                console.log(`Task with ID ${id} not found.`);
+            } else {
+                tasks[taskIndex].status = "in-progress";
+
+                fs.writeFile(TASK_FILE, JSON.stringify(tasks, null, 4), (err) => {
+                    if (err) {
+                        console.log("Error writing to file:", err);
+                    } else {
+                        console.log(`Task with ID ${id} has been marked as in-progress.`);
+                    }
+                    rl.close();
+                });
+            }
+        });
+    });
+}
+
+if (command === "mark-done") {
+    rl.question("Enter the ID of the task to mark as done: ", (taskId) => {
+        const id = parseInt(taskId);
+        if (isNaN(id)) {
+            console.log("Invalid ID, please enter a number.");
+            rl.close();
+            return;
+        }
+
+        loadTasks((tasks) => {
+            const taskIndex = tasks.findIndex(task => task.id === id);
+
+            if (taskIndex === -1) {
+                console.log(`Task with ID ${id} not found.`);
+            } else {
+                tasks[taskIndex].status = "done";
+
+                fs.writeFile(TASK_FILE, JSON.stringify(tasks, null, 4), (err) => {
+                    if (err) {
+                        console.log("Error writing to file:", err);
+                    } else {
+                        console.log(`Task with ID ${id} has been marked as done.`);
+                    }
+                    rl.close();
+                });
+            }
         });
     });
 }

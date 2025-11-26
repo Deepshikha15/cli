@@ -3,7 +3,7 @@ const fs= require("fs")
 
 const command = process.argv[2]; 
 
-if(command !="add" && command !== "delete" && command !="update" && command !== "mark-in-progress" && command !== "mark-done"){
+if(command !="add" && command !== "delete" && command !="update" && command !== "mark-in-progress" && command !== "mark-done" && command !== "list" && command !== "pending" && command !=="done"){
     console.log('Please use "add" to add a task, "delete" to delete a task, "update" to update a task, "mark-in-progress" to mark a task as in-progress, or "mark-done" to mark a task as done');
     process.exit(1)
 }
@@ -176,5 +176,51 @@ if (command === "mark-done") {
                 });
             }
         });
+    });
+}
+
+if (command === "list") {
+    loadTasks((tasks) => {
+        if (tasks.length === 0) {
+            console.log("No tasks found.");
+        } else {
+            console.log("All Tasks:");
+            tasks.forEach(task => {
+                console.log(`ID: ${task.id} | Task: ${task.task} | Status: ${task.status}`);
+            });
+        }
+        rl.close();
+    });
+}
+
+if (command === "pending") {
+    loadTasks((tasks) => {
+        const pendingTasks = tasks.filter(task => !task.status || task.status === "pending");
+
+        if (pendingTasks.length === 0) {
+            console.log("No pending tasks found.");
+        } else {
+            console.log("Pending Tasks:");
+            pendingTasks.forEach(task => {
+                console.log(`ID: ${task.id} | Task: ${task.task} | Status: pending`);
+            });
+        }
+        rl.close();
+    });
+}
+
+if (command === "done") {
+    loadTasks((tasks) => {
+        const doneTasks = tasks.filter(task => !task.status || task.status === "done");
+
+        if (doneTasks.length === 0) {
+            console.log("No done tasks found.");
+        } else {
+            console.log("done Tasks:");
+            doneTasks.forEach(task => {
+                console.log(`ID: ${task.id} | Task: ${task.task} | Status: done`);
+            });
+        }
+        rl.close();
     });
 }

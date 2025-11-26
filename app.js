@@ -3,8 +3,8 @@ const fs= require("fs")
 
 const command = process.argv[2]; 
 
-if(command !="add" && command !== "delete"){
-    console.log('please add "add" task or "delete" to delete a task')
+if(command !="add" && command !== "delete" && command !="update"){
+    console.log('Please use "add" to add a task, "delete" to delete a task, or "update" to update a task');
     process.exit(1)
 }
 
@@ -15,21 +15,27 @@ const rl=readline.createInterface({
     output:process.stdout
 })
 const TASK_FILE = "task.json";
-if (command === "add") {
-    rl.question("add task ",(task)=>{
-        fs.readFile(TASK_FILE, 'utf-8', (err, data) => {
-            let tasks = [];
 
-            if (err) {
-                console.log("No existing task file, starting fresh...");
-            } else {
-                try {
-                    tasks = JSON.parse(data);
-                } catch (e) {
-                    console.log("Error parsing existing tasks, starting fresh.");
-                }
+function loadTasks(callback) {
+    fs.readFile(TASK_FILE, 'utf-8', (err, data) => {
+        let tasks = [];
+        if (err) {
+            console.log("No existing task file, starting fresh...");
+            callback(tasks);
+        } else {
+            try {
+                tasks = JSON.parse(data);
+            } catch (e) {
+                console.log("Error parsing existing tasks, starting fresh.");
             }
+            callback(tasks);
+        }
+    });
+}
 
+if (command === "add") {
+    rl.question("Add task: ", (task) => {
+        loadTasks((tasks) => {
             nextId = tasks.length > 0 ? tasks[tasks.length - 1].id + 1 : 1;
 
             const task_name = {
@@ -47,8 +53,8 @@ if (command === "add") {
                 }
                 rl.close();
             });
-    })
-    })
+        });
+    });
 }
 
 if (command === "delete") {
@@ -60,23 +66,7 @@ if (command === "delete") {
             return;
         }
 
-        fs.readFile(TASK_FILE, 'utf-8', (err, data) => {
-            let tasks = [];
-
-            if (err) {
-                console.log("No existing task file, nothing to delete.");
-                rl.close();
-                return;
-            }
-
-            try {
-                tasks = JSON.parse(data);
-            } catch (e) {
-                console.log("Error parsing existing tasks.");
-                rl.close();
-                return;
-            }
-
+        loadTasks((tasks) => {
             const updatedTasks = tasks.filter(task => task.id !== id);
 
             if (updatedTasks.length === tasks.length) {
@@ -91,6 +81,38 @@ if (command === "delete") {
                     rl.close();
                 });
             }
+        });
+    });
+}
+
+if (command === "update") {
+    rl.question("Enter the ID of the task to update: ", (taskId) => {
+        const id = parseInt(taskId);
+        if (isNaN(id)) {
+            console.log("Invalid ID, please enter a number.");
+            rl.close();
+            return;
+        }
+
+        rl.question("Enter the new task description: ", (newTask) => {
+            loadTasks((tasks) => {
+                const taskIndex = tasks.findIndex(task => task.id === id);
+
+                if (taskIndex === -1) {
+                    console.log(`Task with ID ${id} not found.`);
+                } else {
+                    tasks[taskIndex].task = newTask;
+
+                    fs.writeFile(TASK_FILE, JSON.stringify(tasks, null, 4), (err) => {
+                        if (err) {
+                            console.log("Error writing to file:", err);
+                        } else {
+                            console.log(`Task with ID ${id} has been updated.`);
+                        }
+                        rl.close();
+                    });
+                }
+            });
         });
     });
 }
